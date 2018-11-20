@@ -7,7 +7,11 @@ import os.path
 import puzzles
 import solver
 
-blur_kernel = 3 # used for blurring images
+# pip install sklearn
+# pip install cloudpickle==0.5.6
+from sklearn.cluster import KMeans
+
+blur_kernel = 5 # used for blurring images
 canny_kernel = 5 # used for canny edge detection
 ratio = 2
 low_threshold = 30
@@ -56,10 +60,15 @@ edges_3 = cv2.Canny(board_3_gray, low_threshold, low_threshold*ratio, canny_kern
 # minLineLength – Minimum line length. Line segments shorter than that are rejected.
 # maxLineGap – Maximum allowed gap between points on the same line to link them.
 
-lines = cv2.HoughLinesP(edges_2, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
+# lines is a list of lists
+# each list in lines only contains one element: the two endpoints of the line
+lines = cv2.HoughLinesP(edges_1, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
+# lines = cv2.HoughLines(edges_1, 1, np.pi/180, 200).tolist()
 
-# remove redundant lines
 print('The number of lines detected is: ' + str(len(lines)))
+
+# for each horizontal line, find all of the intersections for each vertical line
+points = []
 
 for line1 in lines:
     (x1, y1, x2, y2) = line1[0]
@@ -67,8 +76,6 @@ for line1 in lines:
     index = 0
     for line2 in lines:
         (x3, y3, x4, y4) = line2[0]
-        if x1==x2 and x3==x4 and y1==y2 and y3==y4: # Same line
-            continue
         if y1==y2 and y3==y4: # Horizontal Lines
             diff = abs(y1-y3)
         elif x1==x2 and x3==x4: # Vertical Lines
@@ -81,12 +88,27 @@ for line1 in lines:
 
 # This number should be 20
 print('The number of lines after filtering: ' + str(len(lines)))
-for line in lines:
-    for x1,y1,x2,y2 in line:
-        cv2.line(board_2, (x1,y1), (x2,y2), (0,0,255), 1)
 
-cv2.imwrite('test.JPG', board_2)
+points = []
 
+for line1 in lines:
+   (x1, y1, x2, y2) = line1[0]
+   slope1 = abs(x1 - x2)
+   if slope1 == 0: # horizontal lines
+       for line2 in lines:
+           (x3, y3, x4, y4) = line2[0]
+           slope2 = abs(x3 - x4)
+           if slope2 == 0:# only looking for vertical lines
+               continue
+           points.append([x1, y3])
+
+for point in points:
+    board_1[point[0], point[1]] = [0,0,255]
+
+# This number should be 100
+print('The number of points plotted is: ' + str(len(points)))
+
+cv2.imwrite('test.JPG', board_1)
 gridsize = (len(lines) - 2) / 2
 
 
