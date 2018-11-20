@@ -7,10 +7,6 @@ import os.path
 import puzzles
 import solver
 
-# pip install sklearn
-# pip install cloudpickle==0.5.6
-from sklearn.cluster import KMeans
-
 blur_kernel = 5 # used for blurring images
 canny_kernel = 5 # used for canny edge detection
 ratio = 2
