@@ -56,33 +56,36 @@ edges_3 = cv2.Canny(board_3_gray, low_threshold, low_threshold*ratio, canny_kern
 # minLineLength – Minimum line length. Line segments shorter than that are rejected.
 # maxLineGap – Maximum allowed gap between points on the same line to link them.
 
-lines = cv2.HoughLinesP(edges_3, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
+lines = cv2.HoughLinesP(edges_2, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
 
 # remove redundant lines
+print('The number of lines detected is: ' + str(len(lines)))
+
 for line1 in lines:
-    for x1,y1,x2,y2 in line1:
-        index = 0
-        for line2 in lines:
-            for x3,y3,x4,y4 in line2:
-                if x1==x2 and x3==x4 and y1==y2 and y3==y4:
-                    continue
-                if y1==y2 and y3==y4: # Horizontal Lines
-                    diff = abs(y1-y3)
-                elif x1==x2 and x3==x4: # Vertical Lines
-                    diff = abs(x1-x3)
-                else:
-                    diff = 0
-                if diff < 10 and diff is not 0:
-                    del lines[index]
-            index = index + 1
+    (x1, y1, x2, y2) = line1[0]
+    # print('x1: ' + str(x1) + ' y1: ' + str(y1) + ' x2: ' + str(x2) + ' y2: ' + str(y2))
+    index = 0
+    for line2 in lines:
+        (x3, y3, x4, y4) = line2[0]
+        if x1==x2 and x3==x4 and y1==y2 and y3==y4: # Same line
+            continue
+        if y1==y2 and y3==y4: # Horizontal Lines
+            diff = abs(y1-y3)
+        elif x1==x2 and x3==x4: # Vertical Lines
+            diff = abs(x1-x3)
+        else:
+            diff = 0
+        if diff < 10 and diff is not 0:
+            del lines[index]
+        index = index + 1
 
 # This number should be 20
-print('The number of lines detected is: ' + str(len(lines)))
+print('The number of lines after filtering: ' + str(len(lines)))
 for line in lines:
     for x1,y1,x2,y2 in line:
-        cv2.line(board_3, (x1,y1), (x2,y2), (0,0,255), 1)
+        cv2.line(board_2, (x1,y1), (x2,y2), (0,0,255), 1)
 
-cv2.imwrite('test.JPG', board_3)
+cv2.imwrite('test.JPG', board_2)
 
 gridsize = (len(lines) - 2) / 2
 
