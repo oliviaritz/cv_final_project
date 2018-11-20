@@ -36,43 +36,55 @@ board_2_gray = cv2.blur(board_2_gray, (blur_kernel, blur_kernel))
 board_3_gray = cv2.blur(board_3_gray, (blur_kernel, blur_kernel))
 
 # detect edges
-
 # First argument is our input image
 # Second and third arguments are our minVal and maxVal respectively
 # Third argument is aperture_size. It is the size of Sobel kernel used for find image gradients (default = 3)
 # Last argument is L2gradient which specifies the equation for finding gradient magnitude
-
 edges_1 = cv2.Canny(board_1_gray, low_threshold, low_threshold*ratio, canny_kernel)
 edges_2 = cv2.Canny(board_2_gray, low_threshold, low_threshold*ratio, canny_kernel)
 edges_3 = cv2.Canny(board_3_gray, low_threshold, low_threshold*ratio, canny_kernel)
 
+# https://stackoverflow.com/questions/19054055/python-cv2-houghlines-grid-line-detection
+# https://stackoverflow.com/questions/48954246/find-sudoku-grid-using-opencv-and-python
+# http://www.shogun-toolbox.org/static/notebook/current/Sudoku_recognizer.html
+
 # apply hough transform
+# image – 8-bit, single-channel binary source image. The image may be modified by the function.
+# rho – Distance resolution of the accumulator in pixels.
+# theta – Angle resolution of the accumulator in radians.
+# threshold – Accumulator threshold parameter. Only those lines are returned that get enough votes ( >\texttt{threshold} ).
+# minLineLength – Minimum line length. Line segments shorter than that are rejected.
+# maxLineGap – Maximum allowed gap between points on the same line to link them.
 
-# First parameter, Input image should be a binary image, so apply threshold edge detection before finding applying hough transform.
-# Second and third parameters are r and θ(theta) accuracies respectively.
-# Fourth argument is the threshold, which means minimum vote it should get for it to be considered as a line.
-# Remember, number of votes depend upon number of points on the line. So it represents the minimum length of line that should be detected.
+lines = cv2.HoughLinesP(edges_3, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
 
-lines = cv2.HoughLines(edges_1, 2, np.pi/180, 300)
-print('Number of lines: ' + str(len(lines)))
+# remove redundant lines
+for line1 in lines:
+    for x1,y1,x2,y2 in line1:
+        index = 0
+        for line2 in lines:
+            for x3,y3,x4,y4 in line2:
+                if x1==x2 and x3==x4 and y1==y2 and y3==y4:
+                    continue
+                if y1==y2 and y3==y4: # Horizontal Lines
+                    diff = abs(y1-y3)
+                elif x1==x2 and x3==x4: # Vertical Lines
+                    diff = abs(x1-x3)
+                else:
+                    diff = 0
+                if diff < 10 and diff is not 0:
+                    del lines[index]
+            index = index + 1
 
-# loop through and plot lines
-if (lines is not None):
-    for line in lines:
-        for rho, theta in line:
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a*rho
-            y0 = b*rho
-            x1 = int(x0 + 1000*(-b))
-            y1 = int(y0 + 1000*(a))
-            x2 = int(x0 - 1000*(-b))
-            y2 = int(y0 - 1000*(a))
-            cv2.line(board_1, (x1,y1), (x2,y2), (0,0,255), 2)
+# This number should be 20
+print('The number of lines detected is: ' + str(len(lines)))
+for line in lines:
+    for x1,y1,x2,y2 in line:
+        cv2.line(board_3, (x1,y1), (x2,y2), (0,0,255), 1)
 
-cv2.imwrite('test.JPG', board_1)
+cv2.imwrite('test.JPG', board_3)
 
-
+gridsize = (len(lines) - 2) / 2
 
 
 # Example code on how to use solver.py
