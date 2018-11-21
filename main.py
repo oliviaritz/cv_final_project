@@ -2,13 +2,14 @@
 
 import cv2
 from matplotlib import pyplot as plt
+import math
 import numpy as np
 import os.path
 import puzzles
 import solver
 
-blur_kernel = 5 # used for blurring images
-canny_kernel = 5 # used for canny edge detection
+blur_kernel = 3 # used for blurring images
+canny_kernel = 3 # used for canny edge detection
 ratio = 2
 low_threshold = 30
 
@@ -31,9 +32,9 @@ board_3_gray = cv2.cvtColor(board_3, cv2.COLOR_BGR2GRAY)
 
 # refer to this source: https://caphuuquan.blogspot.com/2017/04/building-simple-sudoku-solver-from.html
 # blur the images
-board_1_gray = cv2.blur(board_1_gray, (blur_kernel, blur_kernel))
-board_2_gray = cv2.blur(board_2_gray, (blur_kernel, blur_kernel))
-board_3_gray = cv2.blur(board_3_gray, (blur_kernel, blur_kernel))
+# board_1_gray = cv2.blur(board_1_gray, (blur_kernel, blur_kernel))
+# board_2_gray = cv2.blur(board_2_gray, (blur_kernel, blur_kernel))
+# board_3_gray = cv2.blur(board_3_gray, (blur_kernel, blur_kernel))
 
 # detect edges
 # First argument is our input image
@@ -58,7 +59,7 @@ edges_3 = cv2.Canny(board_3_gray, low_threshold, low_threshold*ratio, canny_kern
 
 # lines is a list of lists
 # each list in lines only contains one element: the two endpoints of the line
-lines = cv2.HoughLinesP(edges_1, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
+lines = cv2.HoughLinesP(edges_2, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
 # lines = cv2.HoughLines(edges_1, 1, np.pi/180, 200).tolist()
 
 print('The number of lines detected is: ' + str(len(lines)))
@@ -68,43 +69,71 @@ points = []
 
 for line1 in lines:
     (x1, y1, x2, y2) = line1[0]
-    # print('x1: ' + str(x1) + ' y1: ' + str(y1) + ' x2: ' + str(x2) + ' y2: ' + str(y2))
+    delta_y1 = abs(y1 - y2)
+    delta_x1 = abs(x1 - x2)
+    if delta_y1 == 0:
+        slope1 = math.inf
+    else:
+        slope1 = delta_x1/delta_y1
+
     index = 0
     for line2 in lines:
         (x3, y3, x4, y4) = line2[0]
-        if y1==y2 and y3==y4: # Horizontal Lines
-            diff = abs(y1-y3)
-        elif x1==x2 and x3==x4: # Vertical Lines
-            diff = abs(x1-x3)
+        delta_y2 = abs(y3 - y4)
+        delta_x2 = abs(x3 - x4)
+        if delta_y2 == 0:
+            slope2 = math.inf
+        else:
+            slope2 = delta_x2/delta_y2
+
+        if slope1 < 1 and slope2 < 1: # Horizontal Lines
+            diff = abs(x1 - x3)
+        elif slope1 >= 1 and slope2 >= 1: # Vertical Lines
+            diff = abs(y1 - y3)
         else:
             diff = 0
-        if diff < 10 and diff is not 0:
+        if diff < 20 and diff is not 0:
             del lines[index]
         index = index + 1
 
 # This number should be 20
 print('The number of lines after filtering: ' + str(len(lines)))
 
+'''
+for line in lines:
+    (x1, y1, x2, y2) = line[0]
+    cv2.line(board_2,(x1,y1),(x2,y2),(0,0,255),2)
+'''
+
 points = []
 
 for line1 in lines:
-   (x1, y1, x2, y2) = line1[0]
-   slope1 = abs(x1 - x2)
-   if slope1 == 0: # horizontal lines
-       for line2 in lines:
-           (x3, y3, x4, y4) = line2[0]
-           slope2 = abs(x3 - x4)
-           if slope2 == 0:# only looking for vertical lines
-               continue
-           points.append([x1, y3])
+    (x1, y1, x2, y2) = line1[0]
+    delta_y1 = abs(y1 - y2)
+    delta_x1 = abs(x1 - x2)
+    if delta_y1 == 0:
+        slope1 = math.inf
+    else:
+        slope1 = delta_x1/delta_y1
+    if slope1 < 1: # horizontal line if angle is < 45 degrees
+        for line2 in lines:
+            (x3, y3, x4, y4) = line2[0]
+            delta_y2 = abs(y3 - y4)
+            delta_x2 = abs(x3 - x4)
+            if delta_y2 == 0:
+                slope2 = math.inf
+            else:
+                slope2 = delta_x2/delta_y2
+            if slope2 >= 1:# only looking for vertical lines
+                points.append([x1, y3])
 
 for point in points:
-    board_1[point[0], point[1]] = [0,0,255]
+    board_2[point[0], point[1]] = [0,0,255]
 
 # This number should be 100
 print('The number of points plotted is: ' + str(len(points)))
 
-cv2.imwrite('test.JPG', board_1)
+cv2.imwrite('test.JPG', board_2)
 gridsize = (len(lines) - 2) / 2
 
 
