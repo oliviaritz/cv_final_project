@@ -8,10 +8,14 @@ import os.path
 import puzzles
 import solver
 
-blur_kernel = 3 # used for blurring images
+blur_kernel = 5 # used for blurring images
 canny_kernel = 3 # used for canny edge detection
-ratio = 2
-low_threshold = 30
+dilate_kernel = np.ones((3,3),np.uint8)
+erode_kernel = np.ones((5,5),np.uint8)
+low_threshold = 50 # canny
+high_threshold = 100 # canny
+min_line_length = 200
+max_line_gap = 100
 
 # set up path to example sudoku puzzle images
 my_path = os.path.abspath(os.path.dirname(__file__))
@@ -19,31 +23,25 @@ puzzle_path = os.path.join(my_path, "puzzles/")
 board_1 = os.path.join(puzzle_path, "test1.JPG")
 board_2 = os.path.join(puzzle_path, "test2.JPG")
 board_3 = os.path.join(puzzle_path, "test3.JPG")
+board_4 = os.path.join(puzzle_path, "test4.JPG")
+board_5 = os.path.join(puzzle_path, "test5.JPG")
 
 # read images in and convert to grayscale
-board_1 = cv2.imread(board_1)
-board_2 = cv2.imread(board_2)
-board_3 = cv2.imread(board_3)
-
-board_1_gray = cv2.cvtColor(board_1, cv2.COLOR_BGR2GRAY)
-board_2_gray = cv2.cvtColor(board_2, cv2.COLOR_BGR2GRAY)
-board_3_gray = cv2.cvtColor(board_3, cv2.COLOR_BGR2GRAY)
-
+board = cv2.imread(board_1)
+board_gray = cv2.cvtColor(board, cv2.COLOR_BGR2GRAY)
 
 # refer to this source: https://caphuuquan.blogspot.com/2017/04/building-simple-sudoku-solver-from.html
 # blur the images
-# board_1_gray = cv2.blur(board_1_gray, (blur_kernel, blur_kernel))
-# board_2_gray = cv2.blur(board_2_gray, (blur_kernel, blur_kernel))
-# board_3_gray = cv2.blur(board_3_gray, (blur_kernel, blur_kernel))
+board_gray = cv2.blur(board_gray, (blur_kernel, blur_kernel))
 
 # detect edges
 # First argument is our input image
 # Second and third arguments are our minVal and maxVal respectively
 # Third argument is aperture_size. It is the size of Sobel kernel used for find image gradients (default = 3)
 # Last argument is L2gradient which specifies the equation for finding gradient magnitude
-edges_1 = cv2.Canny(board_1_gray, low_threshold, low_threshold*ratio, canny_kernel)
-edges_2 = cv2.Canny(board_2_gray, low_threshold, low_threshold*ratio, canny_kernel)
-edges_3 = cv2.Canny(board_3_gray, low_threshold, low_threshold*ratio, canny_kernel)
+edges = cv2.Canny(board_gray, low_threshold, high_threshold, canny_kernel)
+# edges = cv2.dilate(edges, dilate_kernel, iterations = 1)
+# edges = cv2.erode(edges, erode_kernel, iterations = 1)
 
 # https://stackoverflow.com/questions/19054055/python-cv2-houghlines-grid-line-detection
 # https://stackoverflow.com/questions/48954246/find-sudoku-grid-using-opencv-and-python
@@ -59,10 +57,11 @@ edges_3 = cv2.Canny(board_3_gray, low_threshold, low_threshold*ratio, canny_kern
 
 # lines is a list of lists
 # each list in lines only contains one element: the two endpoints of the line
-lines = cv2.HoughLinesP(edges_2, 1, np.pi/180, 100, lines = None, minLineLength = 200, maxLineGap = 20).tolist()
-# lines = cv2.HoughLines(edges_1, 1, np.pi/180, 200).tolist()
+lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, lines = None, minLineLength = min_line_length, maxLineGap = max_line_gap).tolist()
+# lines = cv2.HoughLines(edges, 1, np.pi/180, 200).tolist()
 
-print('The number of lines detected is: ' + str(len(lines)))
+num_lines = len(lines)
+print('The number of lines detected in the image is: ' + str(num_lines))
 
 # for each horizontal line, find all of the intersections for each vertical line
 points = []
@@ -71,6 +70,7 @@ for line1 in lines:
     (x1, y1, x2, y2) = line1[0]
     delta_y1 = abs(y1 - y2)
     delta_x1 = abs(x1 - x2)
+
     if delta_y1 == 0:
         slope1 = math.inf
     else:
@@ -81,29 +81,39 @@ for line1 in lines:
         (x3, y3, x4, y4) = line2[0]
         delta_y2 = abs(y3 - y4)
         delta_x2 = abs(x3 - x4)
+
         if delta_y2 == 0:
             slope2 = math.inf
         else:
             slope2 = delta_x2/delta_y2
 
-        if slope1 < 1 and slope2 < 1: # Horizontal Lines
+        if slope1 < 1 and slope2 < 1: # both lines horizontal
             diff = abs(x1 - x3)
-        elif slope1 >= 1 and slope2 >= 1: # Vertical Lines
+        elif slope1 >= 1 and slope2 >= 1: # both lines vertical
             diff = abs(y1 - y3)
         else:
             diff = 0
-        if diff < 20 and diff is not 0:
+        if diff < 25 and diff is not 0:
             del lines[index]
         index = index + 1
 
 # This number should be 20
-print('The number of lines after filtering: ' + str(len(lines)))
+num_lines = len(lines)
 
 '''
 for line in lines:
     (x1, y1, x2, y2) = line[0]
-    cv2.line(board_2,(x1,y1),(x2,y2),(0,0,255),2)
+    cv2.line(board,(x1,y1),(x2,y2),(0,0,255),2)
+
+cv2.imwrite('test.JPG', board)
 '''
+
+if (num_lines == 20):
+    print('Redundant lines successfully filtered out...')
+else:
+    print(str(len(lines)) + ' lines remain after filtering out redundant lines. ' \
+        'However, there should be 20 lines. Program exiting...')
+    exit()
 
 points = []
 
@@ -125,16 +135,48 @@ for line1 in lines:
             else:
                 slope2 = delta_x2/delta_y2
             if slope2 >= 1:# only looking for vertical lines
-                points.append([x1, y3])
+                points.append((x1, y3))
 
-for point in points:
-    board_2[point[0], point[1]] = [0,0,255]
-
+num_points = len(points)
 # This number should be 100
-print('The number of points plotted is: ' + str(len(points)))
+if num_points == 100:
+    print('Intersection points located...')
+else:
+    print(str(num_points) + ' points were found. ' \
+        'However, there should be 100 points. Program exiting...')
+    exit()
 
-cv2.imwrite('test.JPG', board_2)
-gridsize = (len(lines) - 2) / 2
+'''
+for point in points:
+    board[point[0], point[1]] = [0,0,255]
+'''
+
+points.sort()
+boxes = [] # will contain 81 tuples of four corner coordinates
+
+m = 0
+for i in range(81):
+    new_row = i%9
+    if new_row == 0 and i !=0:
+        m += 1
+    a = i%(9) + 10*m
+    b = a + 1
+    box = (points[a], points[b], points[a+10], points[b+10])
+    boxes.append(box)
+
+# This number should be 81
+num_boxes = len(boxes)
+if num_boxes == 81:
+    print('Box coordinates located...')
+else:
+    print(str(num_boxes) + ' boxes were found. ' \
+        'However, there should be 81 boxes. Program exiting...')
+    exit()
+
+for box in boxes:
+    cv2.rectangle(board, box[0], box[3], (0,255,0), 2)
+
+cv2.imwrite('test.JPG', board)
 
 
 # Example code on how to use solver.py
