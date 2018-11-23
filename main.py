@@ -9,8 +9,9 @@ import puzzles
 import solver
 import sudoku
 
-blur_kernel = 4 # used for blurring images
-canny_kernel = 3 # used for canny edge detection
+blur_kernel = 3 # used for blurring images
+bilateral_kernel = 5 # used for blurring images
+canny_kernel = 5 # used for canny edge detection
 low_threshold = 50 # canny
 high_threshold = 100 # canny
 min_line_length = 200 # hough
@@ -25,13 +26,14 @@ board_2 = os.path.join(puzzle_path, "test2.JPG")
 board_3 = os.path.join(puzzle_path, "test3.JPG")
 board_4 = os.path.join(puzzle_path, "test4.JPG")
 board_5 = os.path.join(puzzle_path, "test5.JPG")
+board_6 = os.path.join(puzzle_path, "test6.JPG")
 
 # read images in and convert to grayscale
-board = cv2.imread(board_1)
+board = cv2.imread(board_5)
 board_gray = cv2.cvtColor(board, cv2.COLOR_BGR2GRAY)
-
-# reduce noise in image
+board_gray = cv2.bilateralFilter(board_gray, bilateral_kernel, 75, 75) # bilateral filter preserves edges
 board_gray = cv2.blur(board_gray, (blur_kernel, blur_kernel))
+#board_gray = cv2.GaussianBlur(board_gray, (blur_kernel, blur_kernel), 0)
 
 # detect edges
 # First argument is our input image
@@ -109,11 +111,12 @@ else:
         'However, there should be 81 boxes. Program exiting...')
     exit()
 
+
 for box in boxes:
     cv2.rectangle(board, box[0], box[3], (0,255,0), 2)
 
-cv2.imwrite('test.JPG', board)
 
+cv2.imwrite('test.JPG', board)
 
 
 

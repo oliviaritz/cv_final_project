@@ -5,6 +5,24 @@ from matplotlib import pyplot as plt
 import math
 import numpy as np
 
+# source: https://stackoverflow.com/questions/20677795/how-do-i-compute-the-intersection-point-of-two-lines-in-python
+def getItersection(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1]) #Typo was here
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+       raise Exception('lines do not intersect')
+
+    d = (det(*line1), det(*line2))
+    x = det(d, xdiff) / div
+    y = det(d, ydiff) / div
+    return x, y
+
+
 # for each horizontal line, find all of the intersections for each vertical line
 def filterLines(lines):
     for line1 in lines:
@@ -61,7 +79,8 @@ def getPoints(lines):
                 else:
                     slope2 = delta_x2/delta_y2
                 if slope2 >= 1:# only looking for vertical lines
-                    points.append((x1, y3))
+                    intersection = getItersection(((x1, y1), (x2, y2)), ((x3, y3), (x4, y4)))
+                    points.append((int(intersection[0]), int(intersection[1])))
     return points
 
 
