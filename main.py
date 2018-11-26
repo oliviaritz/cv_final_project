@@ -9,31 +9,31 @@ import puzzles
 import solver
 import sudoku
 
-blur_kernel = 3 # used for blurring images
+blur_kernel = 5 # used for blurring images
 bilateral_kernel = 5 # used for blurring images
 canny_kernel = 5 # used for canny edge detection
 low_threshold = 50 # canny
 high_threshold = 100 # canny
 min_line_length = 200 # hough
 max_line_gap = 200 # hough
-min_votes = 100  # hough
+min_votes = 200  # hough
 
 # set up path to example sudoku puzzle images
 my_path = os.path.abspath(os.path.dirname(__file__))
 puzzle_path = os.path.join(my_path, "puzzles/")
 board_1 = os.path.join(puzzle_path, "test1.JPG")
+board_1_photo = os.path.join(puzzle_path, "test1_photo.JPG")
 board_2 = os.path.join(puzzle_path, "test2.JPG")
+board_2_photo = os.path.join(puzzle_path, "test2_photo.JPG")
 board_3 = os.path.join(puzzle_path, "test3.JPG")
-board_4 = os.path.join(puzzle_path, "test4.JPG")
-board_5 = os.path.join(puzzle_path, "test5.JPG")
-board_6 = os.path.join(puzzle_path, "test6.JPG")
 
 # read images in and convert to grayscale
-board = cv2.imread(board_5)
+board = cv2.imread(board_2_photo)
 board_gray = cv2.cvtColor(board, cv2.COLOR_BGR2GRAY)
-board_gray = cv2.bilateralFilter(board_gray, bilateral_kernel, 75, 75) # bilateral filter preserves edges
-board_gray = cv2.blur(board_gray, (blur_kernel, blur_kernel))
-#board_gray = cv2.GaussianBlur(board_gray, (blur_kernel, blur_kernel), 0)
+
+#board_gray = cv2.bilateralFilter(board_gray, bilateral_kernel, 75, 75) # bilateral filter preserves edges
+#board_gray = cv2.blur(board_gray, (blur_kernel, blur_kernel))
+board_gray = cv2.GaussianBlur(board_gray, (blur_kernel, blur_kernel), 0)
 
 # detect edges
 # First argument is our input image
@@ -53,8 +53,7 @@ cv2.imwrite('edges.JPG', edges)
 
 # lines is a list of lists
 # each list in lines only contains one element: the two endpoints of the line
-lines = cv2.HoughLinesP(edges, 1, np.pi/180, min_votes, lines = None, minLineLength = min_line_length, maxLineGap = max_line_gap).tolist()
-# lines = cv2.HoughLines(edges, 1, np.pi/180, 200).tolist()
+lines = cv2.HoughLinesP(edges, 2, np.pi/180, min_votes, lines = None, minLineLength = min_line_length, maxLineGap = max_line_gap).tolist()
 
 num_lines = len(lines)
 print('The number of lines detected in the image is: ' + str(num_lines))
