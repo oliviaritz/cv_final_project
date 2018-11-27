@@ -4,6 +4,7 @@ import cv2
 from matplotlib import pyplot as plt
 import math
 import numpy as np
+import pickle
 import puzzles
 import solver
 import sudoku
@@ -15,7 +16,8 @@ low_threshold = 50 # canny
 high_threshold = 100 # canny
 min_line_length = 200 # hough
 max_line_gap = 200 # hough
-min_votes = 200  # hough
+min_votes = 250  # hough
+
 
 cap = cv2.VideoCapture(0)
 
@@ -110,6 +112,16 @@ while True:
     # if the program has made it this far break and show solution
     for box in boxes:
         cv2.rectangle(frame, box[0], box[3], (0,255,0), 2)
+
+    # write out box coordinates
+    with open('boxes.txt', 'wb') as fp:
+        pickle.dump(boxes, fp)
+
+    # to read back in
+    '''
+    with open('boxes.txt', 'rb') as fp:
+        boxes = pickle.load(fp)
+    '''
 
     cv2.imwrite('test.JPG', frame)
 
