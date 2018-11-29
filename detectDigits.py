@@ -28,14 +28,14 @@ dataset = {
 
 #print(dataset)
 
-dataset = datasets.fetch_mldata("MNIST Original")
+#dataset = datasets.fetch_mldata("MNIST Original")
 
 #print(dataset)
 
 ###
-features = np.array(dataset.data, 'int16')
+features = np.array(dataset["data"], 'int16')
 #print(features)
-labels = np.array(dataset.target, 'int')
+labels = np.array(dataset["target"], 'int')
 
 list_hog_fd = []
 for feature in features:
@@ -68,7 +68,9 @@ im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRE
 cv2.imshow('thresh1', im_th)
 
 kernel = np.ones((2,2),np.uint8)
-im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
+#im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
+im_th = cv2.erode(im_th, kernel)
+im_th = cv2.dilate(im_th, (2, 2))
 cv2.imshow('thresh2', im_th)
 
 # Find contours in the image
@@ -105,7 +107,7 @@ for rect in rects:
         s = y1
         l = y2
 
-    roi = im_th[s+10:l-10, x1+11:x2-11]
+    roi = im_th[s+10:l-10, x1+13:x2-7]
 
 
 
@@ -113,17 +115,18 @@ for rect in rects:
     img_size = roi.size
     if(img_size > 0) :
         roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
-        #roi = cv2.dilate(roi, (3, 3))
 
-
+        #roi = cv2.erode(roi, kernel, iterations=1)
+        #roi = cv2.dilate(roi, (2, 2), iterations = 1)
         # Calculate the HOG features
         roi_hog_fd = hog(roi, orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualize=False, block_norm = 'L1')
 
         #predict
-        nbr = clf.predict(np.array([roi_hog_fd], 'float64'))
-        cv2.imshow(str(int(nbr[0])), roi)
-        #annotate
-        cv2.putText(im, str(int(nbr[0])), ((x1+x2)//2, (y2+y1)//2),cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 3)
+        if(cv2.countNonZero(roi) > 20):
+            nbr = clf.predict(np.array([roi_hog_fd], 'float64'))
+            cv2.imshow(str(int(nbr[0])), roi)
+            #annotate
+            cv2.putText(im, str(int(nbr[0])), ((x1+x2)//2, (y2+y1)//2),cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 3)
 
 cv2.imshow("Resulting Image with Rectangular ROIs", im)
 cv2.waitKey()
