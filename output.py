@@ -39,6 +39,6 @@ for i in range(81):
 	# draw new value onto image
 	# TODO: use correct sudoku puzzle output instead of 1
 	if result[i] != 0:
-		draw.text((newx, newy),str(result[i]),(0,0,0),font=font)
+		draw.text((newx, newy),str(result[i]),(150,0,0),font=font)
 
 img.save('test-out.jpg')
