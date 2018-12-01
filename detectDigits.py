@@ -8,50 +8,11 @@ import pickle
 import cv2
 import numpy as np
 
-#dataset = datasets.fetch_mldata("MNIST Original")
-
-###
-from scipy.io import loadmat
-mnist_alternative_url = "https://github.com/amplab/datascience-sp14/raw/master/lab7/mldata/mnist-original.mat"
-mnist_path = "./mnist-original.mat"
-response = urllib.request.urlopen(mnist_alternative_url)
-with open(mnist_path, "wb") as f:
-    content = response.read()
-    f.write(content)
-mnist_raw = loadmat(mnist_path)
-dataset = {
-        "data": mnist_raw["data"].T,
-        "target": mnist_raw["label"][0],
-        "COL_NAMES": ["label", "data"],
-        "DESCR": "mldata.org dataset: mnist-original",
-}
-
-#print(dataset)
-
-#dataset = datasets.fetch_mldata("MNIST Original")
-
-#print(dataset)
-
-###
-features = np.array(dataset["data"], 'int16')
-#print(features)
-labels = np.array(dataset["target"], 'int')
-
-list_hog_fd = []
-for feature in features:
-    fd = hog(feature.reshape((28, 28)), orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualize=False, block_norm='L1')
-    list_hog_fd.append(fd)
-hog_features = np.array(list_hog_fd, 'float64')
-
-clf = LinearSVC()
-
-clf.fit(hog_features, labels)
 
 
-joblib.dump(clf, "digits_cls.pkl", compress=3)
-
+clf = joblib.load("digits_cls.pkl")
 # Read the input image
-im = cv2.imread("test.jpg")
+im = cv2.imread("test2.jpg")
 
 # Convert to grayscale and apply Gaussian filtering
 im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -62,15 +23,16 @@ cv2.imshow('gray', im_gray)
 
 # Threshold the image
 
-img = cv2.GaussianBlur(im_gray, (3, 3), 0)
+img = cv2.GaussianBlur(im_gray, (5, 5), cv2.BORDER_DEFAULT)
 cv2.imshow('blur', img)
 im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
 cv2.imshow('thresh1', im_th)
 
 kernel = np.ones((2,2),np.uint8)
-#im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
-im_th = cv2.erode(im_th, kernel)
-im_th = cv2.dilate(im_th, (2, 2))
+im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
+#im_th = cv2.dilate(im_th, kernel)
+im_th = cv2.erode(im_th, kernel, iterations = 1)
+#im_th = cv2.dilate(im_th, kernel)
 cv2.imshow('thresh2', im_th)
 
 # Find contours in the image
@@ -78,7 +40,7 @@ _, ctrs, hier = cv2.findContours(im_th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPR
 
 # Get rectangles contains each contour
 #rects = [cv2.boundingRect(ctr) for ctr in ctrs]
-with open('boxes.txt', 'rb') as fp:
+with open('boxes2.txt', 'rb') as fp:
     boxes = pickle.load(fp)
 
 rects = boxes
@@ -107,7 +69,8 @@ for rect in rects:
         s = y1
         l = y2
 
-    roi = im_th[s+10:l-10, x1+13:x2-7]
+
+    roi = im_th[s+7:l-7, x1+10:x2-6]
 
 
 
@@ -122,7 +85,7 @@ for rect in rects:
         roi_hog_fd = hog(roi, orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualize=False, block_norm = 'L1')
 
         #predict
-        if(cv2.countNonZero(roi) > 20):
+        if(cv2.countNonZero(roi) > 26):
             nbr = clf.predict(np.array([roi_hog_fd], 'float64'))
             cv2.imshow(str(int(nbr[0])), roi)
             #annotate
