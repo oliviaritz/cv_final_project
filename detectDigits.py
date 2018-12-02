@@ -12,7 +12,7 @@ import numpy as np
 
 clf = joblib.load("digits_cls.pkl")
 # Read the input image
-im = cv2.imread("test2.jpg")
+im = cv2.imread("test3.jpg")
 
 # Convert to grayscale and apply Gaussian filtering
 im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -23,7 +23,7 @@ cv2.imshow('gray', im_gray)
 
 # Threshold the image
 
-img = cv2.GaussianBlur(im_gray, (5, 5), cv2.BORDER_DEFAULT)
+img = cv2.GaussianBlur(im_gray, (3, 3), cv2.BORDER_DEFAULT)
 cv2.imshow('blur', img)
 im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
 cv2.imshow('thresh1', im_th)
@@ -31,7 +31,7 @@ cv2.imshow('thresh1', im_th)
 kernel = np.ones((2,2),np.uint8)
 im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
 #im_th = cv2.dilate(im_th, kernel)
-im_th = cv2.erode(im_th, kernel, iterations = 1)
+#im_th = cv2.erode(im_th, kernel, iterations = 1)
 #im_th = cv2.dilate(im_th, kernel)
 cv2.imshow('thresh2', im_th)
 
@@ -40,7 +40,7 @@ _, ctrs, hier = cv2.findContours(im_th.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPR
 
 # Get rectangles contains each contour
 #rects = [cv2.boundingRect(ctr) for ctr in ctrs]
-with open('boxes2.txt', 'rb') as fp:
+with open('boxes3.txt', 'rb') as fp:
     boxes = pickle.load(fp)
 
 rects = boxes
