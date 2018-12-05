@@ -9,6 +9,12 @@ import pickle
 import puzzles
 import solver
 import sudoku
+from sklearn.externals import joblib
+from sklearn import datasets
+from skimage.feature import hog
+from sklearn.svm import LinearSVC
+from six.moves import urllib
+
 
 blur_kernel = 5 # used for blurring images
 bilateral_kernel = 5 # used for blurring images
@@ -146,3 +152,110 @@ while True:
         pickle.dump(boxes, fp)
 
     break
+
+
+
+
+###
+
+
+
+
+
+#digit detection
+rects = boxes
+im = frame
+
+
+#load the classifier
+clf = joblib.load("digits_cls.pkl")
+
+
+# Read the input image
+#im = cv2.imread("test2.jpg")
+
+# Convert to grayscale and apply Gaussian filtering
+im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+#im_gray = cv2.GaussianBlur(im_gray, (5, 5), 0)
+
+cv2.imshow('gray', im_gray)
+
+
+# Blur & Threshold
+img = cv2.GaussianBlur(im_gray, (5, 5), cv2.BORDER_DEFAULT)
+cv2.imshow('blur', img)
+im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
+#im_th = cv2.Canny(img, low_threshold, high_threshold, canny_kernel)
+#im_th = cv2.morphologyEx(im_th, cv2.MORPH_CLOSE, kernel, iterations = 2)
+cv2.imshow('thresh1', im_th)
+
+
+
+kernel = np.ones((2,2),np.uint8)
+im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
+#im_th = cv2.dilate(im_th, kernel)
+im_th = cv2.erode(im_th, kernel, iterations = 1)
+#im_th = cv2.dilate(im_th, kernel)
+cv2.imshow('thresh2', im_th)
+
+
+
+# Get box coordinates
+#with open('boxes2.txt', 'rb') as fp:
+ #   boxes = pickle.load(fp)
+
+
+
+# For each rectangular region, calculate HOG features and predict
+# the digit using Linear SVM.
+i = 0
+
+detected = "";
+for rect in rects:
+    i = i + 1
+    print(rect)
+    x1 = rect[0][0]
+    print(x1)
+    y1 = rect[0][1]
+    print(y1)
+    x2= rect[3][0]
+    y2 = rect[3][1]
+
+
+    # Draw the rectangles
+    cv2.rectangle(im, rect[0], rect[3], (0, 255, 0), 3)
+
+
+    roi = im_th[y1+7:y2-8, x1+9:x2-5]
+
+
+
+
+    # Resize the image
+    img_size = roi.size
+    if(img_size > 0) :
+        roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
+
+        #roi = cv2.erode(roi, kernel, iterations=1)
+        #roi = cv2.dilate(roi, (2, 2), iterations = 1)
+        # Calculate the HOG features
+        roi_hog_fd = hog(roi, orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualize=False, block_norm = 'L1')
+
+
+        #predict
+        digit = "."
+        if(cv2.countNonZero(roi) > 26):
+            nbr = clf.predict(np.array([roi_hog_fd], 'float64'))
+            digit = str(int(nbr[0]))
+            cv2.imshow(digit, roi)
+            #annotate
+            cv2.putText(im, str(int(nbr[0])), ((x1+x2)//2, (y2+y1)//2),cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 3)
+
+        #append to the result string
+        detected = detected + digit
+#cv2.imwrite('Annotated.jpg', im)
+#cv2.imwrite('Thresh.jpg', im_th)
+#cv2.imwrite('')
+cv2.imshow("Resulting Image with Rectangular ROIs", im)
+print(detected)
+cv2.waitKey()
