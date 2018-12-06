@@ -291,4 +291,6 @@ for i in range(81):
 
 
 img.save('test-out.jpg')
+img.show('test-out.jpg')
+
 cv2.waitKey()
