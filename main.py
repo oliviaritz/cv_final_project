@@ -234,3 +234,4 @@ for rect in rects:
 #cv2.imwrite('')
 cv2.imshow("Resulting Image with Rectangular ROIs", frame)
 print(detected)
+print(len(detected))
