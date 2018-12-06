@@ -210,7 +210,10 @@ for rect in rects:
     # Draw the rectangles
     cv2.rectangle(frame, rect[0], rect[3], (0, 255, 0), 3)
 
-    roi = im_th[y1+7:y2-8, x1+9:x2-5]
+    x_length = x2 - x1;
+    y_length = y2 - y1;
+    roi = im_th[y1 + (y_length // 7):y2 - (y_length // 6), x1 + (x_length // 6):x2 - (x_length // 8)]
+    #roi = im_th[y1+7:y2-8, x1+9:x2-5]
 
     # Resize the image
     img_size = roi.size
