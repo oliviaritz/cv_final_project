@@ -29,7 +29,6 @@ min_line_length = 300 # hough
 max_line_gap = 50 # hough
 min_votes = 200  # hough
 
-
 cap = cv2.VideoCapture(0)
 
 while True:
@@ -52,9 +51,6 @@ while True:
     board_blur = cv2.GaussianBlur(board_gray, (blur_kernel, blur_kernel), 0)
 
     # detect edges
-    # First argument is our input image
-    # Second and third arguments are our minVal and maxVal respectively
-    # Third argument is aperture_size. It is the size of Sobel kernel used for find image gradients (default = 3)
     edges = cv2.Canny(board_gray, low_threshold, high_threshold, canny_kernel)
     cv2.imwrite('edges.JPG', edges)
 
@@ -63,12 +59,6 @@ while True:
     # cv2.imwrite('dilate.JPG', img_dilation)
 
     # apply hough transform
-    # image – 8-bit, single-channel binary source image. The image may be modified by the function.
-    # rho – Distance resolution of the accumulator in pixels.
-    # theta – Angle resolution of the accumulator in radians.
-    # threshold – Accumulator threshold parameter. Only those lines are returned that get enough votes ( >\texttt{threshold} ).
-    # minLineLength – Minimum line length. Line segments shorter than that are rejected.
-    # maxLineGap – Maximum allowed gap between points on the same line to link them.
     lines = cv2.HoughLinesP(edges, 2, np.pi/180, min_votes, lines = None, minLineLength = min_line_length, maxLineGap = max_line_gap)
 
     # check if any lines were detected
@@ -99,19 +89,6 @@ while True:
         print('Redundant lines successfully filtered out...')
     else:
         continue # try again
-
-    # used for debugging
-    '''
-    for line in vertical_lines_filtered:
-        (x1, y1, x2, y2) = line
-        cv2.line(frame,(x1,y1),(x2,y2),(0,0,255),2)
-    cv2.imwrite('v_lines.JPG', frame)
-
-    for line in horizontal_lines_filtered:
-        (x1, y1, x2, y2) = line
-        cv2.line(frame,(x1,y1),(x2,y2),(0,255,0),2)
-    cv2.imwrite('h_lines.JPG', frame)
-    '''
 
     # get line intersection points
     points = sudoku.getPoints(horizontal_lines_filtered, vertical_lines_filtered)
@@ -149,15 +126,12 @@ while True:
     for box in boxes:
         cv2.rectangle(frame, box[0], box[3], (0,255,0), 2)
         cv2.imshow('boxes', frame)
-        cv2.waitKey(50)
-
-    with open('boxes.txt', 'wb') as fp:
-        pickle.dump(boxes, fp)
+        cv2.waitKey(40)
 
     break
 
 cap.release()
-	
+
 # *** start digit detection ***
 rects = boxes
 #im = frame
@@ -174,14 +148,15 @@ clf = joblib.load("digits_cls.pkl")
 #cv2.imshow('gray', im_gray)
 
 # Blur & Threshold
-img = cv2.GaussianBlur(board_gray, (5, 5), cv2.BORDER_DEFAULT)
+#img = cv2.GaussianBlur(board_gray, (5, 5), cv2.BORDER_DEFAULT)
+img = cv2.GaussianBlur(board_gray, (5, 5), 0)
 #cv2.imshow('blur', img)
-im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
+im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 #im_th = cv2.Canny(img, low_threshold, high_threshold, canny_kernel)
 #im_th = cv2.morphologyEx(im_th, cv2.MORPH_CLOSE, kernel, iterations = 2)
 #cv2.imshow('thresh1', im_th)
 
-kernel = np.ones((2,2),np.uint8)
+kernel = np.ones((2, 2), np.uint8)
 im_th = cv2.morphologyEx(im_th, cv2.MORPH_OPEN, kernel, iterations = 1)
 #im_th = cv2.dilate(im_th, kernel)
 im_th = cv2.erode(im_th, kernel, iterations = 1)
@@ -199,11 +174,11 @@ i = 0
 detected = "";
 for rect in rects:
     i = i + 1
-    print(rect)
+    #print(rect)
     x1 = rect[0][0]
-    print(x1)
+    #print(x1)
     y1 = rect[0][1]
-    print(y1)
+    #print(y1)
     x2= rect[3][0]
     y2 = rect[3][1]
 
@@ -223,14 +198,14 @@ for rect in rects:
         #roi = cv2.erode(roi, kernel, iterations=1)
         #roi = cv2.dilate(roi, (2, 2), iterations = 1)
         # Calculate the HOG features
-        roi_hog_fd = hog(roi, orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualize=False, block_norm = 'L1')
+        roi_hog_fd = hog(roi, orientations=11, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualize=False, block_norm = 'L1') # 6 8 2
 
         #predict
         digit = "."
-        if(cv2.countNonZero(roi) > 26):
+        if(cv2.countNonZero(roi) > 36):
             nbr = clf.predict(np.array([roi_hog_fd], 'float64'))
             digit = str(int(nbr[0]))
-            #cv2.imshow(digit, roi)
+            cv2.imshow(digit, roi)
             #annotate
             cv2.putText(frame, str(int(nbr[0])), ((x1+x2)//2, (y2+y1)//2),cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 3)
 
@@ -256,22 +231,22 @@ else:
 	print("Not 81 digits detected")
 	print("Using hardcoded result")
 	detected = '725418639841396275396752841618924357953167482274583916537249168482671593169835724'
-	
-result = solver.solve(detected)	
+
+result = solver.solve(detected)
 
 if result == False:
 	print('Puzzle input invalid. Unable to solve.')
 	print("Using hardcoded result")
 	detected = '725418639841396275396752841618924357953167482274583916537249168482671593169835724'
-	result = solver.solve(detected)	
+	result = solver.solve(detected)
 
-	
+
 # ****** start of output ****
 img = Image.open("frame.JPG")
 draw = ImageDraw.Draw(img)
 
 # font = ImageFont.truetype(<font-file>, <font-size>)
-font = ImageFont.truetype("arial.ttf", 36)	
+font = ImageFont.truetype("arial.ttf", 36)
 
 # set up dict key words
 digits = '123456789'
@@ -281,32 +256,33 @@ keys = []
 for n in range(9):
 	for d in range(9):
 		new = nums[n] + digits[d]
-		keys.append(new)	
-		
-# set up detected list		
-detected_list = []		
+		keys.append(new)
+
+# set up detected list
+detected_list = []
 for s in detected:
 	detected_list.append(s)
-	
-	
+
+
 i = 0
 for k in keys:
 	# shift to be centered in box
 	topleftx = boxes[i][0][0]
 	toprightx = boxes[i][1][0]
 	difx = (toprightx - topleftx) / 4	# divide by 4 because of how digit is written
-	newx = topleftx + difx 
+	newx = topleftx + difx
 
 	toplefty = boxes[i][0][1]
-	botlefty = boxes[i][2][1] 
+	botlefty = boxes[i][2][1]
 	dify = (botlefty - toplefty) / 8	# divide by 8 because of how digit is written
 	newy = toplefty + dify
 
 	# draw new value onto image
 	if detected_list[i] != '.':
 		draw.text((newx, newy),str(result[k]),(150,0,0),font=font)
-	
+
 	# increment index
 	i = i + 1
 
 img.save('test-out.jpg')
+cv2.waitKey()

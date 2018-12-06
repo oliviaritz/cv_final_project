@@ -39,7 +39,7 @@ labels = np.array(dataset["target"], 'int')
 
 list_hog_fd = []
 for feature in features:
-    fd = hog(feature.reshape((28, 28)), orientations=9, pixels_per_cell=(14, 14), cells_per_block=(1, 1), visualize=False, block_norm='L1')
+    fd = hog(feature.reshape((28, 28)), orientations=11, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualize=False, block_norm = 'L1')
     list_hog_fd.append(fd)
 hog_features = np.array(list_hog_fd, 'float64')
 
