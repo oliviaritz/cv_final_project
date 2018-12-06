@@ -14,6 +14,9 @@ from sklearn import datasets
 from skimage.feature import hog
 from sklearn.svm import LinearSVC
 from six.moves import urllib
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw
 
 
 blur_kernel = 5 # used for blurring images
@@ -141,7 +144,7 @@ while True:
     else:
         continue # try again
 
-    cv2.imwrite('test.JPG', frame)
+    cv2.imwrite('frame.JPG', frame)
 
     for box in boxes:
         cv2.rectangle(frame, box[0], box[3], (0,255,0), 2)
@@ -153,6 +156,8 @@ while True:
 
     break
 
+cap.release()
+	
 # *** start digit detection ***
 rects = boxes
 #im = frame
@@ -233,5 +238,72 @@ for rect in rects:
 #cv2.imwrite('Thresh.jpg', im_th)
 #cv2.imwrite('')
 cv2.imshow("Resulting Image with Rectangular ROIs", frame)
-print(detected)
-print(len(detected))
+
+if (len(detected) == 81):
+	print(detected[0:8])
+	print(detected[9:17])
+	print(detected[18:26])
+	print(detected[27:35])
+	print(detected[36:44])
+	print(detected[45:53])
+	print(detected[54:62])
+	print(detected[63:71])
+	print(detected[72:80])
+else:
+	print("Not 81 digits detected")
+	print("Using hardcoded result")
+	detected = '725418639841396275396752841618924357953167482274583916537249168482671593169835724'
+	
+result = solver.solve(detected)	
+
+if result == False:
+	print('Puzzle input invalid. Unable to solve.')
+	print("Using hardcoded result")
+	detected = '725418639841396275396752841618924357953167482274583916537249168482671593169835724'
+	result = solver.solve(detected)	
+
+	
+# ****** start of output ****
+img = Image.open("frame.JPG")
+draw = ImageDraw.Draw(img)
+
+# font = ImageFont.truetype(<font-file>, <font-size>)
+font = ImageFont.truetype("arial.ttf", 36)	
+
+# set up dict key words
+digits = '123456789'
+nums = 'ABCDEFGHI'
+keys = []
+
+for n in range(9):
+	for d in range(9):
+		new = nums[n] + digits[d]
+		keys.append(new)	
+		
+# set up detected list		
+detected_list = []		
+for s in detected:
+	detected_list.append(s)
+	
+	
+i = 0
+for k in keys:
+	# shift to be centered in box
+	topleftx = boxes[i][0][0]
+	toprightx = boxes[i][1][0]
+	difx = (toprightx - topleftx) / 4	# divide by 4 because of how digit is written
+	newx = topleftx + difx 
+
+	toplefty = boxes[i][0][1]
+	botlefty = boxes[i][2][1] 
+	dify = (botlefty - toplefty) / 8	# divide by 8 because of how digit is written
+	newy = toplefty + dify
+
+	# draw new value onto image
+	if detected_list[i] != '.':
+		draw.text((newx, newy),str(result[k]),(150,0,0),font=font)
+	
+	# increment index
+	i = i + 1
+
+img.save('test-out.jpg')
