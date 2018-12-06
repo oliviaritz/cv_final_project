@@ -241,7 +241,7 @@ if result == False:
 	detected = '.254...398.13962..3..752.41618....57.5.16748...45839.65372.9.6848..7159.1...35724'
 	result = solver.solve(detected)	
 	
-print('result:' + str(result))
+#print('result:' + str(result))
 
 	
 # ****** start of output ****
@@ -266,7 +266,7 @@ detected_list = []
 for s in detected:
 	detected_list.append(s)
 
-print('detected_list:' + str(detected_list))	
+#print('detected_list:' + str(detected_list))	
 	
 for i in range(81):
 	# shift to be centered in box
@@ -281,8 +281,8 @@ for i in range(81):
 	newy = toplefty + dify
 
 	k = keys[i]
-	print('k:' + k)
-	print('result[k]:' + result[k])
+	#print('k:' + k)
+	#print('result[k]:' + result[k])
 		
 	
 	# draw new value onto image
