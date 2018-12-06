@@ -232,24 +232,24 @@ else:
 	print('Not 81 digits detected')
 	print('Using hardcoded result')
 	detected = '.254...398.13962..3..752.41618....57.5.16748...45839.65372.9.6848..7159.1...35724'
-	
-result = solver.solve(detected)	
+
+result = solver.solve(detected)
 
 if result == False:
 	print('Puzzle input invalid. Unable to solve.')
 	print('Using hardcoded result')
 	detected = '.254...398.13962..3..752.41618....57.5.16748...45839.65372.9.6848..7159.1...35724'
-	result = solver.solve(detected)	
-	
+	result = solver.solve(detected)
+
 #print('result:' + str(result))
 
-	
+
 # ****** start of output ****
 img = Image.open("frame.JPG")
 draw = ImageDraw.Draw(img)
 
 # font = ImageFont.truetype(<font-file>, <font-size>)
-font = ImageFont.truetype("arial.ttf", 36)	
+font = ImageFont.truetype("arial.ttf", 36)
 
 # set up dict key words
 digits = '123456789'
@@ -259,35 +259,36 @@ keys = []
 for n in range(9):
 	for d in range(9):
 		new = nums[n] + digits[d]
-		keys.append(new)	
-		
-# set up detected list		
-detected_list = []		
+		keys.append(new)
+
+# set up detected list
+detected_list = []
 for s in detected:
 	detected_list.append(s)
 
-#print('detected_list:' + str(detected_list))	
-	
+#print('detected_list:' + str(detected_list))
+
 for i in range(81):
 	# shift to be centered in box
 	topleftx = boxes[i][0][0]
 	toprightx = boxes[i][1][0]
 	difx = (toprightx - topleftx) / 4	# divide by 4 because of how digit is written
-	newx = topleftx + difx 
+	newx = topleftx + difx
 
 	toplefty = boxes[i][0][1]
-	botlefty = boxes[i][2][1] 
+	botlefty = boxes[i][2][1]
 	dify = (botlefty - toplefty) / 8	# divide by 8 because of how digit is written
 	newy = toplefty + dify
 
 	k = keys[i]
 	#print('k:' + k)
 	#print('result[k]:' + result[k])
-		
-	
+
+
 	# draw new value onto image
 	if detected_list[i] != '.':
 		draw.text((newx, newy),str(result[k]),(150,0,0),font=font)
-	
+
 
 img.save('test-out.jpg')
+cv2.waitKey()
