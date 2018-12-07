@@ -1,6 +1,6 @@
 Instructions:
 
-First run createClassifier.py then run main.py
+First run createClassifier.py to create the .pkl file then run main.py
 
 
 Citations:
