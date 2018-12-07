@@ -149,7 +149,7 @@ clf = joblib.load("digits_cls.pkl")
 
 # Blur & Threshold
 #img = cv2.GaussianBlur(board_gray, (5, 5), cv2.BORDER_DEFAULT)
-img = cv2.GaussianBlur(board_gray, (5, 5), 0)
+img = cv2.GaussianBlur(board_gray, (7, 7), 0)
 #cv2.imshow('blur', img)
 im_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 #im_th = cv2.Canny(img, low_threshold, high_threshold, canny_kernel)
@@ -175,8 +175,8 @@ detected = "";
 for rect in rects:
     i = i + 1
     #print(rect)
-    x1 = rect[0][0]
     #print(x1)
+    x1 = rect[0][0]
     y1 = rect[0][1]
     #print(y1)
     x2= rect[3][0]
@@ -193,19 +193,23 @@ for rect in rects:
     # Resize the image
     img_size = roi.size
     if(img_size > 0) :
+        #roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
         roi = cv2.resize(roi, (28, 28), interpolation=cv2.INTER_AREA)
+        #roi= cv2.copyMakeBorder(roi,2,2,2,2,cv2.BORDER_CONSTANT,value=[0,0,0])
+        #digit = cv2.resize(digit, (26, 26), interpolation=cv2.INTER_AREA)
+        #digit= cv2.copyMakeBorder(digit,2,2,2,2,cv.BORDER_CONSTANT,value=BLACK)
 
         #roi = cv2.erode(roi, kernel, iterations=1)
         #roi = cv2.dilate(roi, (2, 2), iterations = 1)
         # Calculate the HOG features
-        roi_hog_fd = hog(roi, orientations=11, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualize=False, block_norm = 'L1') # 6 8 2
+        roi_hog_fd = hog(roi, orientations=14, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualize=False, block_norm = 'L1') # 6 8 2
 
         #predict
         digit = "."
         if(cv2.countNonZero(roi) > 36):
             nbr = clf.predict(np.array([roi_hog_fd], 'float64'))
             digit = str(int(nbr[0]))
-            cv2.imshow(digit, roi)
+            #cv2.imshow(digit, roi)
             #annotate
             cv2.putText(frame, str(int(nbr[0])), ((x1+x2)//2, (y2+y1)//2),cv2.FONT_HERSHEY_DUPLEX, 2, (0, 255, 255), 3)
 
@@ -286,7 +290,7 @@ for i in range(81):
 
 
 	# draw new value onto image
-	if detected_list[i] != '.':
+	if detected_list[i] == '.':
 		draw.text((newx, newy),str(result[k]),(150,0,0),font=font)
 
 
