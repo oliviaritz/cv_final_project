@@ -1,3 +1,8 @@
+Instructions:
+
+First run createClassifier.py then run main.py
+
+
 Citations:
 
 Sudoku Solver
